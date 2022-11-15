@@ -14,4 +14,6 @@ qadapt.ipynb is for Q-adaptive routing test
 
 The routing algorithms is stored in the models folder
 
+trained models is stored in the dump_dragonfly folder
+
 dragonfly_generator.py provides useful functions for generating and reading different dragonfly topologies
