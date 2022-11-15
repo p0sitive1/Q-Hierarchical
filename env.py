@@ -4,7 +4,7 @@ from struct import pack
 import numpy as np
 from Agent import *
 from matplotlib import pyplot as plt
-from base_policy import Policy
+from models.base_policy import Policy
 import random
 from tqdm import tqdm
 
