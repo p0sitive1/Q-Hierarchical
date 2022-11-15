@@ -9,16 +9,16 @@ from bs4 import ResultSet
 import numpy as np
 from matplotlib import pyplot as plt
 from env import *
-from shortest import *
+from models.shortest import *
 # from qr_one import Qroute
-from dqnn import *
+from models.dqnn import *
 from tqdm import tqdm
-from globalroute import *
-from hierarch_alt import *
-from val import *
-from shortest_alt import *
-from qrouting_alt import *
-from qadapt import *
+from models.globalroute import *
+from models.hierarch_alt import *
+from models.val import *
+from models.shortest_alt import *
+from models.qrouting_alt import *
+from models.qadapt import *
 
 
 def read_from_file(filename):
