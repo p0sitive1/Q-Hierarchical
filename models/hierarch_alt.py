@@ -8,6 +8,9 @@ import math
 
 
 class Hierarch(Policy):
+    """
+    Q-hierarchical routing
+    """
     attrs = Policy.attrs | set(['inTable', 'outTable', 'discount', 'epsilon'])
 
     def __init__(self, network, initQ=0, discount=0.99, epsilon=0.1, threshold=0.1, static=False, pre=False):
@@ -21,10 +24,12 @@ class Hierarch(Policy):
         self.update_counter = 0
         self.x = 0
         self.setup = 1000000
+        # used for pre training
         self.fshortest = ShortestL(network)
         self.fval = VAL(network)
         self.globalr = GlobalRoute(network)
         
+        # generate tables
         self.outTable = dict()
         for group in range(self.group_num):
             outs = list()
@@ -73,7 +78,6 @@ class Hierarch(Policy):
             rand_dest = np.random.choice(list(self.network.nodes[source].outQueuesInter.keys()))
             packet.flag = False
             packet.rand_dest = rand_dest
-            # print(packet, packet.rand_dest)
         elif self.network.nodes[source].group == self.network.nodes[packet.rand_dest].group:
             packet.flag = True
 
@@ -85,7 +89,7 @@ class Hierarch(Policy):
 
     def choose(self, source, dest, packet):
         if False:
-            # explore
+            # explore, not used
             firstChoice = np.random.choice([0, 1])
             if firstChoice == 1:
                 return np.random.choice(list(self.network.nodes[source].outQueuesIntra.keys()))
@@ -95,13 +99,12 @@ class Hierarch(Policy):
             # return self.fshortest.choose(source, dest, packet)
         else:
             if self.pre and not self.static:
+                # pre training
                 return self.fval.choose(source, dest, packet)
             # greedy
             # whether the current group is the dest group
             if self.network.nodes[packet.dest].group == self.network.nodes[source].group:
                 # check bottom of the intable
-                # find line
-                return dest
                 choices = self.inTable[source][dest]
                 choices = list(choices.items())
                 choices.sort(key=lambda x: x[1])
@@ -117,8 +120,8 @@ class Hierarch(Policy):
                 outChoices = list(outChoices.items())
                 outChoices.sort(key=lambda x: x[1])
                 outChoice = outChoices[0][0]
-
-                # ignore intable
+                
+                # First step randomness
                 if packet.flag:
                     choices = list(self.network.nodes[source].outQueuesInter.keys())
                     choi = list()
@@ -127,26 +130,19 @@ class Hierarch(Policy):
                     choices.append(outChoice)
                     choi.append(self.outTable[self.network.nodes[source].group][self.network.nodes[dest].group][outChoice])
                     W = np.array(choi)
-                    # W = W + 0.1
                     xW = 1 / W
-                    # exp_W = np.exp(xW)
-                    # sm_W = exp_W / np.sum(exp_W)
-                    # print(choices, W, sm_W)
                     norm = xW / sum(xW)
-                    # tempChoice = np.random.choice(choices, p=norm)
-                    tempChoice = np.random.choice(choices)
-                    # tempQ = self.outTable[self.network.nodes[source].group][self.network.nodes[dest].group][tempChoice]
-                    # bestQ = self.outTable[self.network.nodes[source].group][self.network.nodes[dest].group][outChoice]
-                    # if (tempQ - bestQ) / bestQ <= 1:
-                    #     outChoice = tempChoice
-                    outChoice = tempChoice
+                    tempChoice = np.random.choice(choices, p=norm)
+                    tempQ = self.outTable[self.network.nodes[source].group][self.network.nodes[dest].group][tempChoice]
+                    bestQ = self.outTable[self.network.nodes[source].group][self.network.nodes[dest].group][outChoice]
+                    if (tempQ - bestQ) / bestQ <= 1:
+                        outChoice = tempChoice
                     packet.flag = False
 
                 if self.pre and not self.static:
                     return self.fshortest.choose(source, outChoice, packet)
                     # return self.fval.choose(source, outChoice, packet)
 
-                # return self.fshortest.short(source, outChoice)[0]
                 inChoices = self.inTable[source][outChoice]
                 inChoices = list(inChoices.items())
                 inChoices.sort(key=lambda x: x[1])
@@ -183,8 +179,7 @@ class Hierarch(Policy):
         self._update_outtable(r, info['min_Q'], x, y, d, lr['q'], t)
 
     def _update_outtable(self, r, info, x, y, d, lr, t):
-        # return
-        #print(f"packet from {x} to {y} dest{d} waited total{r} waited ingroup{t}")
+        #print(f"packet from {x} to {y} dest{d} waited total{r} waited ingroup {t}")
         if self.network.nodes[x].group != self.network.nodes[y].group and self.network.nodes[x].group != self.network.nodes[d].group:
             if self.network.nodes[y].group == self.network.nodes[d].group:
                 if y == d:
@@ -205,8 +200,7 @@ class Hierarch(Policy):
             pass
 
     def _update_intable(self, r, info, x, y, d, lr, n):
-        # return
-        # print(f"packet from {x} to {y} dest{d} waited total{r} waited innode{n}")
+        # print(f"packet from {x} to {y} dest{d} waited total{r} waited innode {n}")
         if self.network.nodes[x].group == self.network.nodes[d].group and self.network.nodes[x].group == self.network.nodes[y].group:
             # if False:
             # x and y and dest are in same group

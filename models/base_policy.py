@@ -4,12 +4,7 @@ import pickle
 
 class Policy:
     """
-    `Policy` is the base class of all routing agents.
-    Attributes:
-        mode (string | None): identifier of what mode the policy needs Network running in.
-        attrs (Set[string]): the attributes would be dumpped/loaded in `self.store`/`self.load`.
-        links (Dict[Int, np.array(Int)]): the network graph, the connections.
-        action_idx (Dict[Int, Dict[Int, Int]]): store the indexes of node's neighbors in `links`
+    Policy creates the basis for all learning agents
     """
     mode = None
     attrs = {'links'}
@@ -57,14 +52,14 @@ class Policy:
         pass
 
     def store(self, filename):
-        """ dump `attrs` by pickle """
+        """ store attrs by pickle """
         f = open(filename, 'wb')
         pickle.dump({k: self.__dict__[k] for k in self.attrs}, f)
         f.close()
 
 
     def load(self, filename):
-        """ load `attrs` by pickle """
+        """ load attrs by pickle """
         with open(filename, 'rb') as f:
             for k, v in pickle.load(f).items():
                 self.__dict__[k] = v

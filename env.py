@@ -43,8 +43,7 @@ class Reward:
         self.agent_info = agent_info
 
     def __repr__(self):
-        # return f"Reward<{self.source}->{self.dest} by action {self.action}>"
-        return f"packet {self.packet} from {self.source} -> {self.action}"
+        return f"Reward<{self.source}->{self.dest} by action {self.action}>"
 
 
 class Packet:
@@ -74,6 +73,14 @@ class Packet:
 
 
 class Node:
+    """
+    Node object
+    ID: identifier for current node
+    inQueue: store incoming packets
+    outQueuesInter: store outgoing inter-group packets
+    outQueuesIntra: store outgoing intra-group packets
+    group: identifier for current group
+    """
     def __init__(self, ID, outs, network, clock, group):
         self.ID = ID
         self.outs = outs
@@ -132,7 +139,7 @@ class Node:
             self.inQueue.append(packet)
             self.agent.receive(self.ID, packet.dest)
 
-    def send(self, pre=False):
+    def send(self):
         """
         send first packets in inQueue to outQueue according to action
         """
@@ -142,7 +149,7 @@ class Node:
             dest = packet.dest
             # action = self.agent.choose_rand(self.ID, dest)  # choose random for testing
             if False:
-                action = self.agent.choose(self.send_info, self.ID, dest)
+                action = self.agent.choose(self.send_info, self.ID, dest) # pass info for older testing, no longer used
             else:
                 action = self.agent.choose(self.ID, dest, packet=packet)  # choose queue
             packet.path.append(action)
@@ -150,9 +157,7 @@ class Node:
                 self.outQueuesInter[action].append(packet)
             else:
                 self.outQueuesIntra[action].append(packet)
-            # self.send_packet(packet, action)
             self.send_packet()
-            # print(f"sending packet {packet} from {self.ID} to {action}")
             self.agent.send(self.ID, dest)
             agent_info = self.agent.get_info(self.ID, action, packet)
             agent_info = self._build_info(agent_info, packet, action)
@@ -161,11 +166,8 @@ class Node:
 
     def send_packet(self):
         """
-        send packets in queue
+        send packets in all queue
         """
-        # packet.trans_time = self.network.transtime
-        # packet.hops += 1
-        # self.network.event_queue.append(Event(packet, self.ID, action, self.clock.t + packet.trans_time))
         for q in self.outQueuesInter.items():
             while len(q[1]) > 0:
                 dest = q[0]
@@ -191,6 +193,11 @@ class Node:
 
 
 class Network:
+    """
+    Network object
+    nodes: stores all node in network
+    links: stores all links in network
+    """
     def __init__(self, adj, bandwidth=1, transtime=1, group_num=9, drop=False):
         self.bandwidth = bandwidth
         self.transtime = transtime
@@ -242,6 +249,9 @@ class Network:
                     self.links[a.ID].append(b.ID)
     
     def grouping(self):
+        """
+        Create groupings
+        """
         self.groups = {}
         for i in range(self.group_num):
             self.groups[i] = []
@@ -251,11 +261,14 @@ class Network:
             
 
     def bind(self, agent):
+        """
+        Bind agent to network
+        """
         self.agent = agent
 
     def reset(self):
         """
-        reset network
+        Reset network
         """
         self.nodes = {}
         self.links = {}
@@ -295,9 +308,9 @@ class Network:
                 print(out.ID, end=" ")
             print()
 
-    def new_packet(self, lambd, offset=36):
+    def new_packet(self, lambd):
         """
-        create n packets
+        create n packets under uniform traffic
 
         :param n:
         :return list of packets:
@@ -318,7 +331,7 @@ class Network:
 
     def new_packet_adv(self, lambd, h):
         """
-        create n packets under adversarial traffic
+        create n packets under adversarial traffic with adv+h
 
         :param n:
         :return list of packets:
@@ -327,7 +340,6 @@ class Network:
         g_num = 4
         for _ in range(np.random.poisson(lambd)):
             source = np.random.randint(0, len(self.nodes))
-            # source = np.random.randint(0, 4)
             sg = self.nodes[source].group
             dg = sg + h
             if dg >= self.group_num:
@@ -378,7 +390,7 @@ class Network:
             for packet in node.inQueue:
                 del packet
 
-    def step(self, duration, pre=False):
+    def step(self, duration):
         """
         Advance the simulation by *duration*
 
@@ -387,7 +399,7 @@ class Network:
         """
         rewards = []
         for node in self.nodes.values():
-            event = node.send(pre=pre)
+            event = node.send()
             if event:
                 rewards += event
 
@@ -421,9 +433,16 @@ class Network:
             self.step_route_time.append(0)
         return rewards
 
-    def train(self, duration, lambd, slot=1, freq=1, lr={}, hop=False, drop=False, pre=False, arrive=False, inject=True, adv=False, alting=False):
+    def train(self, duration, lambd, slot=1, freq=1, lr={}, hop=False, drop=False, arrive=False, inject=True, adv=False, alting=False):
         """
         train the network for a given duration under load lambda
+
+        hop: whether to record average hops
+        drop: whether to record drop rate
+        arrive: whether to record arrival rate
+        inject: whether to inject packets every time slot
+        adv: set to False for uniform traffic pattern, set to integer n for adv+n traffic pattern
+        alting: test changing traffic load
         """
         step_num = int(duration / slot)
         result = {'route_time': np.zeros(step_num)}
@@ -435,7 +454,7 @@ class Network:
             result['arrive'] = np.zeros(step_num)
         self.offset = 0
         for i in tqdm(range(step_num)):
-            if i == 10000 or i == 20000:
+            if alting and (i == 10000 or i == 20000):
                 self.reset()
             if alting:
                 if i < 10000:
@@ -452,7 +471,7 @@ class Network:
             if inject:
                 self.inject(packets)
             for _ in range(freq):
-                r = self.step(slot, pre=pre)
+                r = self.step(slot)
                 if r:
                     self.agent.learn(r)
             result['route_time'][i] = self.ave_route_time
@@ -465,6 +484,9 @@ class Network:
         return result
     
     def train_one_load(self, duration, lambd, slot=1, freq=1, lr={}, droprate=False, hop=False, arrive=False, adv=False):
+        """
+        used for older testing, use train() instead
+        """
         step_num = int(duration / slot)
         result = {'route_time': np.zeros(step_num)}
         if droprate:
@@ -496,6 +518,9 @@ class Network:
 
 
     def print_node_info(self):
+        """
+        Output all node info
+        """
         print(f"Total packets: {self.total_packets}, active packets: {self.active_packets}, ended packets: {self.end_packets}")
         for node in self.nodes.values():
             print(f"{node}")

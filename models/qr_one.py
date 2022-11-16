@@ -4,6 +4,9 @@ from base_policy import Policy
 
 
 class Qroute(Policy):
+    """
+    Q-routing
+    """
     attrs = Policy.attrs | set(['Qtable', 'discount', 'epsilon'])
 
     def __init__(self, network, net_name='6x6', memory_capa=100000, initQ=0, discount=0.99, epsilon = 0.1, static=False):
@@ -13,7 +16,7 @@ class Qroute(Policy):
         self.capa = memory_capa
         self.state = 3 * 36
         self.static = static
-        self.memory = np.zeros((memory_capa, 2 * self.state + 4))     # 初始化记忆库
+        self.memory = np.zeros((memory_capa, 2 * self.state + 4))
         
         self.discount = discount
         self.epsilon = epsilon
@@ -67,7 +70,6 @@ class Qroute(Policy):
             is_dest = 1
 
         transition = np.hstack((state, y, r, state_, a_, is_dest))
-        # 如果记忆库满了, 就覆盖老数据
         index = self.memory_counter % self.capa
         self.memory[index, :] = transition
         self.memory_counter += 1

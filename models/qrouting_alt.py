@@ -5,6 +5,9 @@ from val import *
 
 
 class Qroute(Policy):
+    """
+    Q-routing for testing purposes, not used
+    """
     attrs = Policy.attrs | {'Qtable', 'discount', 'threshold'}
 
     def __init__(self, network, initQ=0, discount=0.99, threshold=0.1, static=False, pre=False):

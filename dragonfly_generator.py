@@ -2,6 +2,13 @@ import numpy as np
 import sys
 
 def generate_dragonfly(router_per_p, connections):
+    """
+    Generate a dragonfly network with the following information:
+    router_per_p: number of router per group
+    connections: number of inter-group links per router
+
+    The generated network is fully interconnected within group
+    """
     colleague = router_per_p
     connection = connections
     group = colleague*connection+1
@@ -21,6 +28,11 @@ def generate_dragonfly(router_per_p, connections):
 
 
 def read_from_file(filename):
+    """
+    Read dragonfly network fron txt file with adj matrix within
+
+    returns the adj matrix as 2-d list
+    """
     f = open(filename, "r")
     adj = list()
     lines = f.readlines()
@@ -36,6 +48,7 @@ def read_from_file(filename):
     return adj
 
 
+# generate the 264 nodes matrix
 np.set_printoptions(threshold=sys.maxsize)
 f = open("topo.txt", "w")
 for l in generate_dragonfly(8, 4):

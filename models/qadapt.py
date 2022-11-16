@@ -7,6 +7,9 @@ import math
 
 
 class Qadapt(Policy):
+    """
+    Q-adaptive routing
+    """
     attrs = Policy.attrs | set(['QTable', 'discount', 'epsilon'])
 
     def __init__(self, network, initQ=0, discount=0.99, epsilon=0.1, threshold=0.1, static=False, pre=False):
@@ -71,8 +74,6 @@ class Qadapt(Policy):
                 return self.fshortest.short(source, dest)[0]
             else:
                 # select random local port as best port
-                return self.fshortest.short(source, dest)[0]
-                # Choices = list(self.QTable[destg][source].keys())
                 Choices = list(self.network.nodes[source].outQueuesIntra.keys())
                 best = np.random.choice(Choices)
 
@@ -92,7 +93,6 @@ class Qadapt(Policy):
                 choices = [temp, rand_out]
                 choice = np.random.choice(choices, p=[0.1, 0.9])
                 return choice
-                return temp
         else:
             return self.fshortest.choose(source, dest, packet)
 
