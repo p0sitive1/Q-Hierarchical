@@ -1,6 +1,5 @@
 import numpy as np
-
-from base_policy import Policy
+from models.base_policy import Policy
 
 
 class Shortest(Policy):

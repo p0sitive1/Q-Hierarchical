@@ -1,8 +1,8 @@
 import numpy as np
-from base_policy import Policy
-from shortest_alt import ShortestL
-from val import VAL
-from shortest import *
+from models.base_policy import Policy
+from models.shortest_alt import ShortestL
+from models.val import VAL
+from models.shortest import *
 import random
 import math
 

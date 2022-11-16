@@ -1,6 +1,6 @@
 import numpy as np
-from base_policy import Policy
-from shortest import *
+from models.base_policy import Policy
+from models.shortest import *
 
 
 class Qroute(Policy):

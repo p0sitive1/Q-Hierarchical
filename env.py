@@ -2,7 +2,6 @@ from heapq import heappop, nsmallest
 from operator import ilshift
 from struct import pack
 import numpy as np
-from Agent import *
 from matplotlib import pyplot as plt
 from models.base_policy import Policy
 import random

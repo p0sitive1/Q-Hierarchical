@@ -1,6 +1,6 @@
 import numpy as np
-from base_policy import Policy
-from shortest_alt import *
+from models.base_policy import Policy
+from models.shortest_alt import *
 
 class VAL(Policy):
     """
